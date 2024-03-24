@@ -110,7 +110,7 @@ def obter_resultados_enquete(enquete_id):
 
     resultados = {}
     for opcao in opcoes_enquete:
-        numero_votos = Votos.query.filter_by(opcao_id=opcao.id).count()
+        numero_votos = Votos.query.filter_by(enquete_opcoes_id=opcao.id).count()
         resultados[opcao.opcao] = numero_votos
 
     return jsonify(resultados), 200
