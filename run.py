@@ -100,6 +100,87 @@ def votar_enquete(enquete_id):
     return jsonify({'msg': 'Voto registrado com sucesso.'}), 201
 
 
+@app.route('/api/enquetes/<int:enquete_id>/resultados', methods=['GET'])
+def obter_resultados_enquete(enquete_id):
+    enquete = Enquete.query.get(enquete_id)
+    if enquete is None:
+        return jsonify({'msg': 'Enquete não encontrada.'}), 404
+
+    opcoes_enquete = EnqueteOpcoes.query.filter_by(enquete_id=enquete_id).all()
+
+    resultados = {}
+    for opcao in opcoes_enquete:
+        numero_votos = Votos.query.filter_by(opcao_id=opcao.id).count()
+        resultados[opcao.opcao] = numero_votos
+
+    return jsonify(resultados), 200
+
+
+@app.route('/api/enquetes/<int:enquete_id>/opcoes', methods=['GET'])
+def visualizar_opcoes_enquete(enquete_id):
+    enquete = Enquete.query.get(enquete_id)
+    if enquete is None:
+        return jsonify({'msg': 'Enquete não encontrada.'}), 404
+
+    opcoes_enquete = EnqueteOpcoes.query.filter_by(enquete_id=enquete_id).all()
+
+    opcoes_json = []
+    for opcao in opcoes_enquete:
+        opcao_json = {
+            'id': opcao.id,
+            'opcao': opcao.opcao
+        }
+        opcoes_json.append(opcao_json)
+
+    return jsonify(opcoes_json), 200
+
+
+@app.route('/api/enquetes/<int:enquete_id>/opcoes', methods=['POST'])
+def adicionar_opcao_enquete(enquete_id):
+    enquete = Enquete.query.get(enquete_id)
+    if enquete is None:
+        return jsonify({'msg': 'Enquete não encontrada.'}), 404
+
+    dados = request.json
+
+    if 'opcao' not in dados:
+        return jsonify({'message': 'Campo "opcao" é obrigatório.'}), 400
+
+    nova_opcao = EnqueteOpcoes(enquete_id=enquete_id, opcao=dados['opcao'])
+
+    db.session.add(nova_opcao)
+    db.session.commit()
+
+    return jsonify({'msg': 'Opção adicionada à enquete com sucesso.', 'id': nova_opcao.id}), 201
+
+
+@app.route('/api/enquetes/<int:enquete_id>', methods=['DELETE'])
+def deletar_enquete(enquete_id):
+    enquete = Enquete.query.get(enquete_id)
+    if enquete is None:
+        return jsonify({'msg': 'Enquete não encontrada.'}), 404
+
+    db.session.delete(enquete)
+    db.session.commit()
+
+    return jsonify({'msg': 'Enquete deletada com sucesso.'}), 200
+
+
+@app.route('/api/enquetes/<int:enquete_id>/opcoes/<int:opcao_id>', methods=['DELETE'])
+def deletar_opcao_enquete(enquete_id, opcao_id):
+    enquete = Enquete.query.get(enquete_id)
+    if enquete is None:
+        return jsonify({'msg': 'Enquete não encontrada.'}), 404
+
+    opcao = EnqueteOpcoes.query.filter_by(id=opcao_id).first()
+    if opcao is None:
+        return jsonify({'msg': 'Opção de enquete não encontrada.'}), 404
+
+    db.session.delete(opcao)
+    db.session.commit()
+
+    return jsonify({'msg': 'Opção de enquete deletada com sucesso.'}), 200
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
